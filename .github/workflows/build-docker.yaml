@@ -1,20 +1,55 @@
-name: Test DockerHub Connection
+name: CI - DockerHub Build & Push
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  test-dockerhub:
+  dockerhub-build-push:
+    name: Build & Push to DockerHub
     runs-on: ubuntu-latest
-    steps:
 
-      - name: Test DockerHub Login
-        run: |
-          echo "🔎 Testing DockerHub authentication..."
-          
-          if echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin; then
-            echo "✅ CONNECTED TO DOCKERHUB"
-          else
-            echo "❌ FAILED TO CONNECT"
-            exit 1
-          fi
+    steps:
+      # --------------------------
+      # Checkout Code
+      # --------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --------------------------
+      # DockerHub Login
+      # --------------------------
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # --------------------------
+      # Build & Push API Image
+      # --------------------------
+      - name: Build API Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api
+          file: ./api/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-api:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-api:${{ github.sha }}
+
+      # --------------------------
+      # Build & Push Frontend Image
+      # --------------------------
+      - name: Build Frontend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./front-end-nextjs
+          file: ./front-end-nextjs/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-frontend:${{ github.sha }}
+
