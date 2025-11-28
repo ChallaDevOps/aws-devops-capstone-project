@@ -1,52 +1,39 @@
-name: Build & Push Docker Images
+name: Docker CI/CD
 
 on:
-  workflow_dispatch:   # <---- Manual Trigger
   push:
-    branches: [ "main" ]
-    paths:
-      - "api/**"
-      - "front-end-nextjs/**"
-      - ".github/workflows/docker-build-push.yml"
-      
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build_and_push:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      # 1️⃣ Checkout the repo
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      # Debug secrets (only shows masked values)
-      - name: Debug Docker Hub username (masked)
-        run: echo "USERNAME is set? -> ${{ secrets.DOCKERHUB_USERNAME }}"
+      # 2️⃣ Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Debug token length
-        run: echo "Token length -> $(echo -n '${{ secrets.DOCKERHUB_TOKEN }}' | wc -c)"
+      # 3️⃣ Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Login to Docker Hub
-        env:
-          USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      # 4️⃣ Build Docker image
+      - name: Build Docker image
         run: |
-          if [ -z "$TOKEN" ]; then
-            echo "❌ DOCKERHUB_TOKEN is EMPTY"
-            exit 1
-          fi
-          echo "$TOKEN" | docker login -u "$USERNAME" --password-stdin
+          docker build -t my-dockerhub-username/my-app:latest .
 
-      - name: Build Backend Image
+      # 5️⃣ Push Docker image to Docker Hub
+      - name: Push Docker image
         run: |
-          docker build ./api/ \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-qr-code-backend:latest
-
-      - name: Build Frontend Image
-        run: |
-          docker build ./front-end-nextjs/ \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-qr-code-frontend:latest
-
-      - name: Push Images to Docker Hub
-        run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/devops-qr-code-backend:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/devops-qr-code-frontend:latest
+          docker push my-dockerhub-username/my-app:latest
