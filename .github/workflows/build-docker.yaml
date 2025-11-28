@@ -1,45 +1,50 @@
-name: Build and Publish image to Docker Hub
+name: Build & Push Docker Images
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
     paths:
-      - 'api/Dockerfile'
-      - 'front-end-nextjs/Dockerfile'
+      - "api/**"
+      - "front-end-nextjs/**"
+      - ".github/workflows/docker-build-push.yml"
 
 jobs:
-  publish_images:
+  build_and_push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repo
         uses: actions/checkout@v4
+
+      # Debug secrets (only shows masked values)
+      - name: Debug Docker Hub username (masked)
+        run: echo "USERNAME is set? -> ${{ secrets.DOCKERHUB_USERNAME }}"
+
+      - name: Debug token length
+        run: echo "Token length -> $(echo -n '${{ secrets.DOCKERHUB_TOKEN }}' | wc -c)"
+
+      - name: Login to Docker Hub
+        env:
+          USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "❌ DOCKERHUB_TOKEN is EMPTY"
+            exit 1
+          fi
+          echo "$TOKEN" | docker login -u "$USERNAME" --password-stdin
 
       - name: Build Backend Image
         run: |
           docker build ./api/ \
-            -t 1213117676/devops-qr-code-backend:latest
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-qr-code-backend:latest
 
       - name: Build Frontend Image
         run: |
           docker build ./front-end-nextjs/ \
-            -t 1213117676/devops-qr-code-frontend:latest
-
-      - name: Verify Secret (Debug)
-        run: |
-          if [ -z "${{ secrets.DOCKER_HUB_TOKEN }}" ]; then
-            echo "❌ Secret DOCKER_HUB_TOKEN is EMPTY!"
-            exit 1
-          else
-            echo "✅ Secret exists. Proceeding..."
-          fi
-
-      - name: Login to Docker Hub
-        run: |
-          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u 1213117686 --password-stdin
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-qr-code-frontend:latest
 
       - name: Push Images to Docker Hub
         run: |
-          docker push 1213117676/devops-qr-code-backend:latest
-          docker push 1213117676/devops-qr-code-frontend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/devops-qr-code-backend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/devops-qr-code-frontend:latest
