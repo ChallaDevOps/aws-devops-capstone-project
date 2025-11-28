@@ -19,12 +19,12 @@ jobs:
       - name: Build Backend Image
         run: |
           docker build ./api/ \
-            -t 1213117686/devops-qr-code-backend:latest
+            -t 1213117676/devops-qr-code-backend:latest
 
       - name: Build Frontend Image
         run: |
           docker build ./front-end-nextjs/ \
-            -t 1213117686/devops-qr-code-frontend:latest
+            -t 1213117676/devops-qr-code-frontend:latest
 
       - name: Verify Secret (Debug)
         run: |
@@ -41,5 +41,5 @@ jobs:
 
       - name: Push Images to Docker Hub
         run: |
-          docker push 1213117686/devops-qr-code-backend:latest
-          docker push 1213117686/devops-qr-code-frontend:latest
+          docker push 1213117676/devops-qr-code-backend:latest
+          docker push 1213117676/devops-qr-code-frontend:latest
