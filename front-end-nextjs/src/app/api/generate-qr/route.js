@@ -16,4 +16,4 @@ export async function POST(request) {
     console.error('Error generating QR Code:', error);
     return NextResponse.json({ error: 'Failed to generate QR Code' }, { status: 500 });
   }
-}
+} 
