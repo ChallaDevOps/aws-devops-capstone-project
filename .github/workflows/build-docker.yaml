@@ -13,13 +13,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+
       - name: build image
         run: |
           docker build ./api/ -t 1213117686/devops-qr-code-backend:latest
           docker build ./front-end-nextjs/ -t 1213117686/devops-qr-code-frontend:latest
-      - name: push image to docker hub
+
+      - name: login to docker hub
         run: |
-          docker login -u 1213117686 -p ${{ secrets.DOCKER_HUB_TOKEN }}
+          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u 1213117686 --password-stdin
+
+      - name: push images
+        run: |
           docker push 1213117686/devops-qr-code-backend:latest
           docker push 1213117686/devops-qr-code-frontend:latest
-          
